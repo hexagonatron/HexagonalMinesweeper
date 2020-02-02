@@ -1,0 +1,48 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #121212;
+}
+
+#gamecontainer {
+    position: relative;
+    margin: 50px;
+}
+
+.hexagon {
+    position: absolute;
+    width: 25px; 
+    height: 14.43px;
+    background-color: #0A5CE8;
+    margin: 7.22px 0;
+    text-align: center;
+    font-size: 16px;
+    line-height: 14.43px;
+    font-weight: bold;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+  }
+  
+  .hexagon .hexTop,
+  .hexagon .hexBottom {
+    content: "";
+    position: absolute;
+    width: 0;
+    border-left: 12.5px solid transparent;
+    border-right: 12.5px solid transparent;
+  }
+  
+  .hexagon .hexTop {
+    bottom: 100%;
+    left: 0%;
+    border-bottom: 7.22px solid #0A5CE8
+  }
+  
+  .hexagon .hexBottom {
+    top: 100%;
+    left: 0%;
+    width: 0;
+    border-top: 7.22px solid #0A5CE8;
+  }
