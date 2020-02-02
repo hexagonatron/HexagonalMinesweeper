@@ -23,6 +23,8 @@ body {
     line-height: 14.43px;
     font-weight: bold;
     font-family: Verdana, Geneva, Tahoma, sans-serif;
+    user-select: none;
+    cursor: default;
   }
   
   .hexagon .hexTop,
@@ -45,4 +47,24 @@ body {
     left: 0%;
     width: 0;
     border-top: 7.22px solid #0A5CE8;
+  }
+
+  .flag {
+      position: absolute;
+      height: 15px;
+      width: 2px;
+      top: 0px;
+      left: 11px;
+      background-color: #fff952;
+  }
+
+  .flag::before {
+      content: "";
+      position: absolute;
+      width: 0;
+      border-top: 3px solid transparent;
+      border-bottom: 3px solid transparent;
+      border-left: 8px solid #fff952;
+      top: 0%;
+      left: 2px;
   }
