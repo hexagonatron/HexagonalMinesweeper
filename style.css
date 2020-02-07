@@ -68,3 +68,23 @@ body {
       top: 0%;
       left: 2px;
   }
+
+  .flagcross {
+      position: absolute;
+      left: 11.5px;
+      top: -2.79px;
+      width: 2px;
+      height: 20px;
+      transform: rotate(45deg);
+      background-color: red;
+  }
+
+  .flagcross::after {
+      content: "";
+      position: absolute;
+      left: -0px;
+      width: 2px;
+      height: 20px;
+      transform: rotate(90deg);
+      background-color: red;
+  }

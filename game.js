@@ -16,7 +16,7 @@ var test = [
 ];
 
 //size of board in concentric hexs
-var size = 9;
+var size = 8;
 
 //Hexagon cell sizes
 var hexW = 25;
@@ -52,8 +52,13 @@ var numOfMines = Math.floor(cellTotal * (minePercent / 100));
 //determines if odd or even rows are offset
 var margin = (size + 1) % 2; // 1 if 1st row needs offset
 
+//Var to track if first reveal
 var firstCell = true;
 
+//Variable to track if game is in progress or not
+var acceptAnswer = false;
+
+//Generate board based on size
 generateGameBoard = (sizeHex) => {
     for (i = 0; i < sizeHex; i++) {
 
@@ -79,6 +84,8 @@ generateGameBoard = (sizeHex) => {
         }
 
     }
+
+    //generate revealed mat to track which cells have been revealed
     revealed = [];
 
     for (i = 0; i < gameBoard.length; i++) {
@@ -92,8 +99,7 @@ generateGameBoard = (sizeHex) => {
 //Fill board with mines
 generateGameMines = (firsti, firstj) => {
 
-    console.log(firsti + " " + firstj);
-
+    //init positions array
     minePos = [];
 
     //determines reletive index number of above/below row before 
@@ -104,8 +110,12 @@ generateGameMines = (firsti, firstj) => {
 
     //list of available cells to randomly pick where mines are
     var availableCells = []
+
+    //itirates through gameboard and adds valid cells to available cells array
     for (i = 0; i < gameBoard.length; i++) {
         for (j = 0; j < gameBoard.length; j++) {
+            
+            //doesn't add first click or surrounding cells to available cells array to make initial gameplay easier
             if(gameBoard[i][j] != null && 
                 !(i == firsti && j == firstj) && 
                 !(i == firsti && j == firstj+1) && 
@@ -114,18 +124,20 @@ generateGameMines = (firsti, firstj) => {
                 !(i == firsti-1 && j == firstj + offsetPlus) &&
                 !(i == firsti+1 && j == firstj-offsetMin) &&
                 !(i == firsti+1 && j == firstj+offsetPlus)){
+
+                //init valid co-ordinate
                 var validij = [];
 
+                //if a valid co-ord then push to i j array
                 validij.push(i);
                 validij.push(j);
 
+                //push array to available cells array
                 availableCells.push(validij);
 
             }
         }
     }
-
-    console.log(availableCells);
 
     //Choosing random cell index and adding to list of where mines are
     for (i = 0; i < numOfMines; i++) {
@@ -140,15 +152,19 @@ generateGameMines = (firsti, firstj) => {
         availableCells.splice(rand, 1);
     }
 
+    //Calls fill gameboard fn
     fillGameMines();
 }
 
 //Update board with mines
 fillGameMines = () => {
 
+    //for each i,j pair in miePos array change gameboard co-ord to a mine (x)
     minePos.forEach(mineCoord  => {
         gameBoard[mineCoord[0]][mineCoord[1]] = "x";
     });
+
+    //when all added calculate surrounding mines for each alid cell
     calculateSurroundCells();
 }
 
@@ -225,27 +241,16 @@ printBoardConsole = () => {
     var boardString = "";
     for (i = 0; i < gameBoard.length; i++) {
 
-        //adds intent if printing an offset row
+        //adds indent if printing an offset row
         boardString += ((margin + i) % 2) == 1 ? "  " : "";
 
-        //prints row. If null prints nothing
+        //prints row. If null prints .
         for (j = 0; j < gameBoard.length; j++) {
             boardString += gameBoard[i][j] == null ? ".  " : gameBoard[i][j] + "  ";
-            //boardString += gameBoard[i][j] + "  ";
-
-            //if it's a cell, create element on page
-            if (gameBoard[i][j] != null) {
-
-                // Creates a cell at the correct position. Rows are 3/4 the height of a hex down + the vertical distance to create the correct margin between two angled lines
-                //Horizontal position is index * hex width + the extra on the start if it's an offset row.
-                createCellHex((.75 * hexH + (hexMargin / Math.cos(((2 * Math.PI / 360) * 30)))) * i, j * (hexW + hexMargin) + ((i + margin) % 2) * ((hexW + hexMargin) / 2), i, j, gameBoard[i][j]);
 
                 //increases cell index tracker
                 hexIndex++;
             }
-
-
-        }
 
         //go to next line
         boardString += '\n'
@@ -255,9 +260,11 @@ printBoardConsole = () => {
     console.log(boardString);
 }
 
+//fn to create page elements
 printBoardToPage = () => {
+
+    //itirate through gameboard
     for (i = 0; i < gameBoard.length; i++) {
-        //prints row. If null prints nothing
         for (j = 0; j < gameBoard.length; j++) {
 
             //if it's a cell, create element on page
@@ -277,11 +284,12 @@ createCellHex = (x, y, indexi, indexj, val) => {
     //initialise div
     var newHex = document.createElement('div');
 
+    //init top and bottom triangles
     var hexTop = document.createElement('div');
     var hexBottom = document.createElement('div');
 
+    //classes to make divs look like triangles
     hexTop.classList.add("hexTop");
-
     hexBottom.classList.add("hexBottom");
 
     //Assign class name
@@ -296,17 +304,28 @@ createCellHex = (x, y, indexi, indexj, val) => {
 
     //Add click event
     newHex.addEventListener("click", e => {
+
+
+        //if clicked pass the i and j co-ord to reveal handling fn
         var i = Number(e.currentTarget.dataset["indexi"]);
         var j = Number(e.currentTarget.dataset["indexj"]);
 
+        //calls reveal fn for cell
         revealCell(i, j);
     });
 
+    //Adding right-click event
     newHex.addEventListener("contextmenu", e => {
+
+        //Calls toggle flag fn for cell
         toggleFlag(e.currentTarget.dataset.indexi, e.currentTarget.dataset.indexj);
+        
+        //Prevents the option menu coming up on right-click
         e.preventDefault();
+
     }, false);
 
+    //adds top and bottom triangles as children
     newHex.appendChild(hexTop);
     newHex.appendChild(hexBottom);
 
@@ -316,44 +335,60 @@ createCellHex = (x, y, indexi, indexj, val) => {
 
 //Reveal cell method
 revealCell = (i, j) => {
-    console.log(`i = ${i}, j = ${j}`);
 
+    //To calculate if below row is offset or not
     var offsetMin = (i + margin + 1) % 2;
 
+    //to calculate if above row is offset or not
     var offsetPlus = (i + margin) % 2;
 
+    //if it's the first cell clicked then fill the board with mines except cell clicked and surrounding
     if(firstCell == true){
         generateGameMines(i, j);
         firstCell = false;
     }
 
-    
+    //if cell hasn't been revealed before and accepting answers
+    if(revealed[i][j] ==0 && acceptAnswer){
 
-    console.log(`index i = ${i}, index j = ${j}`);
+        //Sets revealed to 1 so fn can't run again
+        revealed[i][j] = 1;
 
-    if(revealed[i][j] ==0){
+        //iterate though page elements to work out which was clicked
         document.querySelectorAll(".hexagon").forEach(cell => {
+
+            
+
+            //if it's the right one
             if (cell.dataset.indexi == i && cell.dataset.indexj == j) {
 
+                //Sets colour to change elements to. lightblue if number or red if mine
                 var cellColor = gameBoard[i][j] >=0 ? "#4d8eff": "#ff5252";
 
+                //adds number to cell or a dot if it's a mine, nothing if it has no surrounding mines
                 cell.innerHTML += gameBoard[i][j] > 0 ? gameBoard[i][j] : gameBoard[i][j] == "x"? "&#9679;": "";
+
+                //if clicked on a mine cell
+                if(gameBoard[i][j] == "x"){
+
+                    //Trigger endgame events
+                    endGame();
+                }
+
+                //Change the three elements of the hexagon to the colour
                 cell.style.backgroundColor =  cellColor
                 cell.querySelector('.hexTop').style.borderBottomColor = cellColor;
                 cell.querySelector('.hexBottom').style.borderTopColor = cellColor;
             }
 
         });
-        revealed[i][j] = 1;
     }
     
-    
-    
-
+    //if it's a cell with no surrounging mines reveal self and all surrounging cells
     if (gameBoard[i][j] == 0) {
-        //reveal cell
-        //call reveal for surrounding cells
 
+        //if left and right are valid and haven't been revealed call reveal method on them
+        //if the surrounding cells contain flags these are removed by calling toggle flag first
         if (j + 1 <= gameBoard.length - 1 && revealed[i][j + 1] != 1){
             if (revealed[i][j + 1] == 2){toggleFlag(i,j+1)};
             revealCell(i, j + 1)
@@ -362,6 +397,8 @@ revealCell = (i, j) => {
             if(revealed[i][j - 1] == 2){toggleFlag(i,j-1)};
             revealCell(i, j - 1)
         }
+
+        //call reveal on above cells if haven't been revealed and are valid
         if (i - 1 >= 0) {
             if (j - offsetMin >= 0 && revealed[i - 1][j - offsetMin] != 1) {
                 if(revealed[i - 1][j - offsetMin] == 2){toggleFlag(i-1,j-offsetMin)};
@@ -373,6 +410,7 @@ revealCell = (i, j) => {
             }
         }
 
+        //calls reveal fn on below cells if haven't been revealed and are valid
         if (i + 1 <= gameBoard.length - 1) {
             if (j - offsetMin >= 0 && revealed[i + 1][j - offsetMin] != 1) {
                 if(revealed[i + 1][j - offsetMin] == 2){toggleFlag(i+1,j-offsetMin)};
@@ -385,31 +423,197 @@ revealCell = (i, j) => {
         }
 
     }
+    if(checkComplete()){
+        endGame();
+        setTimeout( f => {alert("YOU WON!!!")}
+            ,150);
+    };
 }
 
-toggleFlag = (i, j) => {
-    if(revealed[i][j] == 0 && revealed[i][j] != 2){
-        document.querySelectorAll(".hexagon").forEach(cell => {
-            if (cell.dataset.indexi == i && cell.dataset.indexj == j){
-                var flagDiv = document.createElement('div');
-                flagDiv.classList.add('flag');
-                cell.appendChild(flagDiv);
-                revealed[i][j] = 2;
+//check if all cells that don't contain mines have been revealed i.e. game over and player has won
+checkComplete = () => {
+
+    //itirate through game board
+    for(i = 0; i < gameBoard.length; i++){
+        for(j = 0; j < gameBoard.length; j++){
+
+            //if it's a valid cell that's not a mine and hasn't been revealed
+            if(gameBoard[i][j] != null && gameBoard[i][j] != "x" && revealed[i][j] != 1){
+                
+                //still cells left to reveal so return false
+                return false;
             }
-        });
-    } else if (revealed[i][j] == 2){
-        document.querySelectorAll(".hexagon").forEach(cell => {
-            if(cell.dataset.indexi == i && cell.dataset.indexj == j){
-                cell.removeChild(cell.querySelector('.flag'));
-                revealed[i][j] = 0;
-            }
-        })
+        }
     }
+
+    //if iterated through all cells and all valids and non mines have been revealed then game is complete i.e. return true
+    return true;
 }
 
+//fn to add/remove flags
+toggleFlag = (i, j) => {
+
+    //if game is in progress then do stuff
+    if(acceptAnswer){
+
+        //if the cell hasn't been revealed and there's no flag present
+        if (revealed[i][j] == 0 && revealed[i][j] != 2) {
+
+            //iterate throguh page elements to find corresponding element
+            document.querySelectorAll(".hexagon").forEach(cell => {
+
+                //when found
+                if (cell.dataset.indexi == i && cell.dataset.indexj == j) {
+
+                    //create div
+                    var flagDiv = document.createElement('div');
+
+                    //Add class that makes it look like a flag
+                    flagDiv.classList.add('flag');
+
+                    //append as child to page element
+                    cell.appendChild(flagDiv);
+
+                    //Change reveald to 2
+                    revealed[i][j] = 2;
+                }
+            });
+
+            //If cell already has a flag on it
+        } else if (revealed[i][j] == 2) {
+
+            //find corresponding page element
+            document.querySelectorAll(".hexagon").forEach(cell => {
+
+                //when found correct one
+                if (cell.dataset.indexi == i && cell.dataset.indexj == j) {
+
+                    //finds flag div in cell and removes it
+                    cell.removeChild(cell.querySelector('.flag'));
+
+                    //change revealed indicator back to 0
+                    revealed[i][j] = 0;
+                }
+            })
+        }
+    }
+
+    
+}
+
+revealMines = () => {
+
+    var minesUnfound = [];
+
+    var wrongFlags = [];
+
+    for(i = 0; i < gameBoard.length; i++){
+        for(j = 0; j < gameBoard.length; j++){
+            
+            //if cell is a mine and not revealed
+            if(gameBoard[i][j] == "x" && revealed[i][j] == 0){
+                
+                //push coords to unfound mines array
+                minesUnfound.push([i, j]);
+
+            //if cell has a flag but is NOT a mine
+            } else if(revealed[i][j] == 2 && gameBoard[i][j] != "x"){
+
+                //push coors to wrong flags array
+                wrongFlags.push([i, j]);
+            }
+        }
+    }
+
+    console.log(wrongFlags);
+
+    delayRevealMines = () => {
+
+        if(minesUnfound.length){
+            
+        var rand = Math.floor(Math.random() * minesUnfound.length);
+
+        var cell = findCell(minesUnfound[rand][0], minesUnfound[rand][1]);
+
+        console.log(cell);
+
+        cell.innerHTML+= "&#9679";
+
+        console.log(minesUnfound);
+        
+        minesUnfound.splice(rand, 1);
+            setTimeout(delayRevealMines, 150);
+        } else{
+            delayRevealFlags();
+        }
+    }
+
+    
+
+    delayRevealFlags = () => {
+
+        if(wrongFlags.length){
+
+        var rand = Math.floor(Math.random() * wrongFlags.length);
+
+        var cell = findCell(wrongFlags[rand][0], wrongFlags[rand][1]);
+
+        console.log(cell);
+
+        var newX = document.createElement('div');
+
+        newX.classList.add('flagcross');
+
+        cell.appendChild(newX);
+        
+        wrongFlags.splice(rand, 1);
+
+        setTimeout(delayRevealFlags, 150);
+        
+        }
+    }
+
+    delayRevealMines();
+
+}
+
+getSurround = (i, j) => {
+
+}
+
+findCell = (i, j) => {
+    var cellToReturn;
+    document.querySelectorAll(".hexagon").forEach(cell => {
+        if(cell.dataset.indexi == i && cell.dataset.indexj == j){
+
+            cellToReturn = cell;
+        }
+    });
+
+    return cellToReturn;
+}
+
+//fns to call on game start
 startGame = () => {
+
+    //generates gameboard given size input
     generateGameBoard(sizeHex);
+
+    //creates page elements
     printBoardToPage();
+
+    //After things are generated start accepting answers
+    acceptAnswer = true;
 }
 
+//Endgame events
+endGame = () => {
+    //Stop accepting answers
+    acceptAnswer = false;
+
+    //Reveal mines
+    revealMines();
+}
+
+//Calls start game on page load
 startGame();
