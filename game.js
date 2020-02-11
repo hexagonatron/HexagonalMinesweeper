@@ -4,17 +4,6 @@ var gameBoard = [];
 //init revealed array
 var revealed = [];
 
-//for reference
-var test = [
-    [0, 1, 1, 1, 1, 0, 0],   // 0
-    [0, 1, 1, 1, 1, 1, 0],     // 1
-    [1, 1, 1, 1, 1, 1, 0],   // 2
-    [1, 1, 1, 1, 1, 1, 1],     // 3*
-    [1, 1, 1, 1, 1, 1, 0],   // 4
-    [0, 1, 1, 1, 1, 1, 0],     // 5
-    [0, 1, 1, 1, 1, 0, 0]    // 6
-];
-
 //size of board in concentric hexs
 var size = 8;
 
@@ -164,6 +153,8 @@ fillGameMines = () => {
         gameBoard[mineCoord[0]][mineCoord[1]] = "x";
     });
 
+    printBoardConsole();
+
     //when all added calculate surrounding mines for each alid cell
     calculateSurroundCells();
 }
@@ -174,57 +165,24 @@ calculateSurroundCells = () => {
     for (i = 0; i < gameBoard.length; i++) {
         for (j = 0; j < gameBoard.length; j++) {
 
+            var surround = getSurround(i, j);
+
+            console.log(surround);
+
             //if a valid cell and not a mine start calculation
             if (gameBoard[i][j] != null && gameBoard[i][j] != "x") {
 
                 //start count at 0
                 var count = 0;
 
-                //determines reletive index number of above/below row before 
-                var offsetMin = (i + margin + 1) % 2;
+                surround.forEach( countMines = (cell) => {
+                    
+                    if(gameBoard[cell[0]][cell[1]] == "x"){count++}
 
-                //determines relative index number of above/below cell after
-                var offsetPlus = (i + margin) % 2;
+                    console.log(`${gameBoard[cell[0]][cell[1]]}, ${count}`);
+                },)
 
-                //console.log(`i = ${i}, j = ${j}, offsetMin = ${offsetMin} OffsetPLus = ${offsetPlus}, margin = ${margin}`);
-
-                //if not at edge
-                if (j - 1 >= 0) {
-
-                    //if left is a mine
-                    if (gameBoard[i][j - 1] == "x") { count++; }
-                }
-                if (j + 1 <= gameBoard.length - 1) {
-
-                    //if right is a mine
-                    if (gameBoard[i][j + 1] == "x") { count++; }
-                }
-                if (i - 1 >= 0) {
-                    if (j - offsetMin >= 0) {
-
-                        //if upper left is a mine
-                        if (gameBoard[i - 1][j - offsetMin] == "x") { count++; }
-                    }
-
-                    if (j + offsetPlus <= gameBoard.length - 1) {
-
-                        //if upper right is a mine
-                        if (gameBoard[i - 1][j + offsetPlus] == "x") { count++; }
-                    }
-                }
-                if (i + 1 <= gameBoard.length - 1) {
-                    if (j - offsetMin >= 0) {
-
-                        //if lower left is a mine
-                        if (gameBoard[i + 1][j - offsetMin] == "x") { count++; }
-                    }
-
-                    if (j + offsetPlus <= gameBoard.length - 1) {
-
-                        //if lower right is a mine
-                        if (gameBoard[i + 1][j + offsetPlus] == "x") { count++; }
-                    }
-                }
+                console.log(count);
 
                 //Set cell to surrounding mine #
                 gameBoard[i][j] = count;
@@ -237,8 +195,10 @@ calculateSurroundCells = () => {
 
 //logs gameboard to console in readable form
 printBoardConsole = () => {
-    var hexIndex = 0
+
+    //init output string
     var boardString = "";
+
     for (i = 0; i < gameBoard.length; i++) {
 
         //adds indent if printing an offset row
@@ -247,9 +207,6 @@ printBoardConsole = () => {
         //prints row. If null prints .
         for (j = 0; j < gameBoard.length; j++) {
             boardString += gameBoard[i][j] == null ? ".  " : gameBoard[i][j] + "  ";
-
-                //increases cell index tracker
-                hexIndex++;
             }
 
         //go to next line
@@ -501,12 +458,15 @@ toggleFlag = (i, j) => {
     
 }
 
+//fn to reveal remaining unfound mines in random order. Also puts X on wrong flags
 revealMines = () => {
 
+    //init arays to contain coords
     var minesUnfound = [];
 
     var wrongFlags = [];
 
+    //interate through game board
     for(i = 0; i < gameBoard.length; i++){
         for(j = 0; j < gameBoard.length; j++){
             
@@ -525,51 +485,60 @@ revealMines = () => {
         }
     }
 
-    console.log(wrongFlags);
-
+    //fn that will reveal a random mine
     delayRevealMines = () => {
-
-        if(minesUnfound.length){
-            
-        var rand = Math.floor(Math.random() * minesUnfound.length);
-
-        var cell = findCell(minesUnfound[rand][0], minesUnfound[rand][1]);
-
-        console.log(cell);
-
-        cell.innerHTML+= "&#9679";
-
-        console.log(minesUnfound);
         
-        minesUnfound.splice(rand, 1);
+        //if length is not 0, i.e. there are still mines to reveal
+        if (minesUnfound.length) {
+
+            //generate random number for mine to display
+            var rand = Math.floor(Math.random() * minesUnfound.length);
+
+            //finds cell on page given i and j
+            var cell = findCell(minesUnfound[rand][0], minesUnfound[rand][1]);
+            
+            //adds dot to cell
+            cell.innerHTML += "&#9679";
+
+            //removes coord from remaining unrevealed cells
+            minesUnfound.splice(rand, 1);
+
+            //calls fn again with 150ms delay
             setTimeout(delayRevealMines, 150);
-        } else{
+
+        //if all mines are revealed skip to crossing flags
+        } else {
             delayRevealFlags();
         }
     }
 
-    
-
+    //Flag reveal Fn
     delayRevealFlags = () => {
 
-        if(wrongFlags.length){
+        //if there are flags to reveal
+        if (wrongFlags.length) {
 
-        var rand = Math.floor(Math.random() * wrongFlags.length);
+            //generate rand number for flag to reveal
+            var rand = Math.floor(Math.random() * wrongFlags.length);
 
-        var cell = findCell(wrongFlags[rand][0], wrongFlags[rand][1]);
+            //finds cell in page
+            var cell = findCell(wrongFlags[rand][0], wrongFlags[rand][1]);
 
-        console.log(cell);
+            //creates X element
+            var newX = document.createElement('div');
 
-        var newX = document.createElement('div');
+            //adds styling
+            newX.classList.add('flagcross');
 
-        newX.classList.add('flagcross');
+            //Adds to page
+            cell.appendChild(newX);
 
-        cell.appendChild(newX);
-        
-        wrongFlags.splice(rand, 1);
+            //removes self from coords array
+            wrongFlags.splice(rand, 1);
 
-        setTimeout(delayRevealFlags, 150);
-        
+            //call fn again recursively
+            setTimeout(delayRevealFlags, 150);
+
         }
     }
 
@@ -577,19 +546,77 @@ revealMines = () => {
 
 }
 
+//fn to get surrounding cells given i j value
 getSurround = (i, j) => {
+
+    var output = [];
+
+    //determines reletive index number of above/below row before 
+    var offsetMin = (i + margin + 1) % 2;
+
+    //determines relative index number of above/below cell after
+    var offsetPlus = (i + margin) % 2;
+    if (gameBoard[i][j] != null) {
+        //if not at edge
+        if (j - 1 >= 0) {
+            if (gameBoard[i][j - 1] != null) { output.push([i, j - 1]) }
+        }
+        if (j + 1 <= gameBoard.length - 1) {
+            if (gameBoard[i][j + 1] != null) { output.push([i, j + 1]); }
+        }
+        if (i - 1 >= 0) {
+            if (j - offsetMin >= 0) {
+
+                if (gameBoard[i - 1][j - offsetMin] != null) { output.push([i - 1, j - offsetMin]); }
+
+            }
+
+            if (j + offsetPlus <= gameBoard.length - 1) {
+
+                if (gameBoard[i - 1][j + offsetPlus] != null) { output.push([i - 1, j + offsetPlus]); }
+
+            }
+        }
+        if (i + 1 <= gameBoard.length - 1) {
+            if (j - offsetMin >= 0) {
+
+                if (gameBoard[i + 1][j - offsetMin] != null) { output.push([i + 1, j - offsetMin]); }
+
+            }
+
+            if (j + offsetPlus <= gameBoard.length - 1) {
+
+                if (gameBoard[i + 1][j + offsetPlus] != null) { output.push([i + 1, j + offsetPlus]); }
+
+            }
+        }
+    }
+    
+
+    //console.log(output);
+
+    return output;
 
 }
 
+//fn to find cell elements on page given i j
 findCell = (i, j) => {
+    
+    //init return var
     var cellToReturn;
+
+    //finds all hexes on page
     document.querySelectorAll(".hexagon").forEach(cell => {
+
+        //if cell is the one being looked for
         if(cell.dataset.indexi == i && cell.dataset.indexj == j){
 
+            //get ready to return
             cellToReturn = cell;
         }
     });
 
+    //return cell
     return cellToReturn;
 }
 
