@@ -153,8 +153,6 @@ fillGameMines = () => {
         gameBoard[mineCoord[0]][mineCoord[1]] = "x";
     });
 
-    printBoardConsole();
-
     //when all added calculate surrounding mines for each alid cell
     calculateSurroundCells();
 }
@@ -167,7 +165,6 @@ calculateSurroundCells = () => {
 
             var surround = getSurround(i, j);
 
-            console.log(surround);
 
             //if a valid cell and not a mine start calculation
             if (gameBoard[i][j] != null && gameBoard[i][j] != "x") {
@@ -179,10 +176,7 @@ calculateSurroundCells = () => {
                     
                     if(gameBoard[cell[0]][cell[1]] == "x"){count++}
 
-                    console.log(`${gameBoard[cell[0]][cell[1]]}, ${count}`);
-                },)
-
-                console.log(count);
+                });
 
                 //Set cell to surrounding mine #
                 gameBoard[i][j] = count;
@@ -229,14 +223,14 @@ printBoardToPage = () => {
 
                 // Creates a cell at the correct position. Rows are 3/4 the height of a hex down + the vertical distance to create the correct margin between two angled lines
                 //Horizontal position is index * hex width + the extra on the start if it's an offset row.
-                createCellHex((.75 * hexH + (hexMargin / Math.cos(((2 * Math.PI / 360) * 30)))) * i, j * (hexW + hexMargin) + ((i + margin) % 2) * ((hexW + hexMargin) / 2), i, j, gameBoard[i][j]);
+                createCellHex((.75 * hexH + (hexMargin / Math.cos(((2 * Math.PI / 360) * 30)))) * i, j * (hexW + hexMargin) + ((i + margin) % 2) * ((hexW + hexMargin) / 2), i, j);
             }
         }
     }
 }
 
 //Creates hexagons given x pos, y pos and cell index
-createCellHex = (x, y, indexi, indexj, val) => {
+createCellHex = (x, y, indexi, indexj) => {
 
     //initialise div
     var newHex = document.createElement('div');
@@ -293,12 +287,6 @@ createCellHex = (x, y, indexi, indexj, val) => {
 //Reveal cell method
 revealCell = (i, j) => {
 
-    //To calculate if below row is offset or not
-    var offsetMin = (i + margin + 1) % 2;
-
-    //to calculate if above row is offset or not
-    var offsetPlus = (i + margin) % 2;
-
     //if it's the first cell clicked then fill the board with mines except cell clicked and surrounding
     if(firstCell == true){
         generateGameMines(i, j);
@@ -306,82 +294,65 @@ revealCell = (i, j) => {
     }
 
     //if cell hasn't been revealed before and accepting answers
-    if(revealed[i][j] ==0 && acceptAnswer){
+    if (revealed[i][j] == 0 && acceptAnswer) {
 
         //Sets revealed to 1 so fn can't run again
         revealed[i][j] = 1;
 
-        //iterate though page elements to work out which was clicked
-        document.querySelectorAll(".hexagon").forEach(cell => {
+        //finds cell element on page
+        cell = findCell(i, j);
 
-            
+        //Sets colour to change elements to. lightblue if number or red if mine
+        var cellColor = gameBoard[i][j] >= 0 ? "#4d8eff" : "#ff5252";
 
-            //if it's the right one
-            if (cell.dataset.indexi == i && cell.dataset.indexj == j) {
+        //adds number to cell or a dot if it's a mine, nothing if it has no surrounding mines
+        cell.innerHTML += gameBoard[i][j] > 0 ? gameBoard[i][j] : gameBoard[i][j] == "x" ? "&#9679;" : "";
 
-                //Sets colour to change elements to. lightblue if number or red if mine
-                var cellColor = gameBoard[i][j] >=0 ? "#4d8eff": "#ff5252";
+        //if clicked on a mine cell
+        if (gameBoard[i][j] == "x") {
 
-                //adds number to cell or a dot if it's a mine, nothing if it has no surrounding mines
-                cell.innerHTML += gameBoard[i][j] > 0 ? gameBoard[i][j] : gameBoard[i][j] == "x"? "&#9679;": "";
+            //Trigger endgame events
+            endGame();
+        }
 
-                //if clicked on a mine cell
-                if(gameBoard[i][j] == "x"){
-
-                    //Trigger endgame events
-                    endGame();
-                }
-
-                //Change the three elements of the hexagon to the colour
-                cell.style.backgroundColor =  cellColor
-                cell.querySelector('.hexTop').style.borderBottomColor = cellColor;
-                cell.querySelector('.hexBottom').style.borderTopColor = cellColor;
-            }
-
-        });
+        //Change the three elements of the hexagon to the colour
+        cell.style.backgroundColor = cellColor
+        cell.querySelector('.hexTop').style.borderBottomColor = cellColor;
+        cell.querySelector('.hexBottom').style.borderTopColor = cellColor;
     }
     
     //if it's a cell with no surrounging mines reveal self and all surrounging cells
     if (gameBoard[i][j] == 0) {
 
-        //if left and right are valid and haven't been revealed call reveal method on them
-        //if the surrounding cells contain flags these are removed by calling toggle flag first
-        if (j + 1 <= gameBoard.length - 1 && revealed[i][j + 1] != 1){
-            if (revealed[i][j + 1] == 2){toggleFlag(i,j+1)};
-            revealCell(i, j + 1)
-        }
-        if (j - 1 >= 0 && revealed[i][j - 1] != 1) {
-            if(revealed[i][j - 1] == 2){toggleFlag(i,j-1)};
-            revealCell(i, j - 1)
-        }
+        //init surroung array
+        var surround;
 
-        //call reveal on above cells if haven't been revealed and are valid
-        if (i - 1 >= 0) {
-            if (j - offsetMin >= 0 && revealed[i - 1][j - offsetMin] != 1) {
-                if(revealed[i - 1][j - offsetMin] == 2){toggleFlag(i-1,j-offsetMin)};
-                revealCell(i - 1, j - offsetMin)
-            }
-            if (j + offsetPlus <= gameBoard.length - 1 && revealed[i - 1][j + offsetPlus] != 1) {
-                if(revealed[i - 1][j + offsetPlus] == 2){toggleFlag(i-1, j+offsetPlus)};
-                revealCell(i - 1, j + offsetPlus)
-            }
-        }
+        //gets surrounding points from fn
+        surround = getSurround(i,j);
 
-        //calls reveal fn on below cells if haven't been revealed and are valid
-        if (i + 1 <= gameBoard.length - 1) {
-            if (j - offsetMin >= 0 && revealed[i + 1][j - offsetMin] != 1) {
-                if(revealed[i + 1][j - offsetMin] == 2){toggleFlag(i+1,j-offsetMin)};
-                revealCell(i + 1, j - offsetMin)
+        //for each pair of surround coords do stuff 
+        surround.forEach(cell  => {
+
+            //if it hasn't been revealed
+            if(revealed[cell[0]][cell[1]] != 1){
+                
+                // if it's a flag toogle flag to remove
+                if (revealed[cell[0]][cell[1]] == 2) { toggleFlag(cell[0], cell[1]) }
+
+                //call reveal cell on specific cell
+                revealCell(cell[0], cell[1]);
             }
-            if (j + offsetPlus <= gameBoard.length - 1 && revealed[i + 1][j + offsetPlus] != 1) {
-                if(revealed[i + 1][j + offsetPlus] == 2){toggleFlag(i+1,j+offsetPlus)};
-                revealCell(i + 1, j + offsetPlus)
-            }
-        }
+        });
 
     }
+
+    //calls check complere fn. if true i.e. player has won then do stuff
     if(checkComplete()){
+
+        //end game
         endGame();
+
+        //alert you won
         setTimeout( f => {alert("YOU WON!!!")}
             ,150);
     };
@@ -591,9 +562,6 @@ getSurround = (i, j) => {
             }
         }
     }
-    
-
-    //console.log(output);
 
     return output;
 
