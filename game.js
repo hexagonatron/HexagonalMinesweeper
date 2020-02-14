@@ -47,6 +47,20 @@ var firstCell = true;
 //Variable to track if game is in progress or not
 var acceptAnswer = false;
 
+var wonGame = false;
+
+//track if CTRL key is down
+var ctrDown = false;
+
+//to deal with rapid triggering of keypress event
+var lastCtrDown = false;
+
+//to track which cell mouse is over
+var hover = [];
+
+//track which is highlighted
+var highlighted= [];
+
 //Generate board based on size
 generateGameBoard = (sizeHex) => {
     for (i = 0; i < sizeHex; i++) {
@@ -263,6 +277,36 @@ createCellHex = (x, y, indexi, indexj) => {
 
         //calls reveal fn for cell
         revealCell(i, j);
+
+        if(revealed[i][j] == 1 && acceptAnswer && gameBoard[i][j] > 0 && ctrDown){
+            revealAllSurround(i, j);
+        }
+
+    });
+
+    newHex.addEventListener("mouseenter", e => {
+
+        //get i and j of mouse over
+        var i = e.target.dataset.indexi;
+        var j = e.target.dataset.indexj;
+
+        hover[0] = i;
+        hover[1] = j;
+
+        highlightRevealSurround();
+
+    });
+
+    newHex.addEventListener("mouseleave", e => {
+
+        //get i and j of mouse over
+        var i = e.target.dataset.indexi;
+        var j = e.target.dataset.indexj;
+
+        //set hover to nothing on mouse leave
+        hover = [];
+        highlightRevealSurround();
+
     });
 
     //Adding right-click event
@@ -322,7 +366,7 @@ revealCell = (i, j) => {
     }
     
     //if it's a cell with no surrounging mines reveal self and all surrounging cells
-    if (gameBoard[i][j] == 0) {
+    if (gameBoard[i][j] == 0 && acceptAnswer) {
 
         //init surroung array
         var surround;
@@ -349,12 +393,10 @@ revealCell = (i, j) => {
     //calls check complere fn. if true i.e. player has won then do stuff
     if(checkComplete()){
 
+        wonGame = true;
+
         //end game
         endGame();
-
-        //alert you won
-        setTimeout( f => {alert("YOU WON!!!")}
-            ,150);
     };
 }
 
@@ -427,6 +469,97 @@ toggleFlag = (i, j) => {
     }
 
     
+}
+
+//fn to reveal all surroung
+revealAllSurround = (i, j) => {
+
+    var surround = getSurround(i, j);
+
+    var flagCount = 0
+
+    surround.forEach(coord => {
+        var coodi = coord[0];
+        var coodj = coord[1];
+
+        if(revealed[coodi][coodj] == 2){flagCount++};
+
+    });
+
+    if(flagCount == gameBoard[i][j]){
+        surround.forEach(coord => {
+            coordi = coord[0];
+            coordj = coord[1];
+
+            revealCell(coordi, coordj);
+        })
+    }
+}
+
+highlightRevealSurround = () => {
+    
+    if (highlighted.length){
+
+
+        i = highlighted[0];
+        j = highlighted[1];
+
+        var surroundRevert = getSurround(i, j);
+
+        surroundRevert.forEach(coordRevert => {
+
+            var surroundReverti = coordRevert[0];
+            var surroundRevertj = coordRevert[1];
+
+            if(revealed[surroundReverti][surroundRevertj] == 0){
+
+                var revertCell = findCell(surroundReverti, surroundRevertj);
+
+                var normalColour = "#0A5CE8"
+
+                revertCell.style.backgroundColor = normalColour;
+                revertCell.querySelector('.hexTop').style.borderBottomColor = normalColour;
+                revertCell.querySelector('.hexBottom').style.borderTopColor = normalColour;
+            }
+
+        });
+        
+        highlighted = [];
+
+    } else {        
+        
+        if(acceptAnswer && ctrDown && hover.length){
+            
+            var i = hover[0];
+            var j = hover[1];
+            if(revealed[i][j] == 1 && gameBoard[i][j] > 0) {
+                
+                var surround = getSurround(i, j);
+                
+                surround.forEach(coord => {
+                    var surroundi = coord[0];
+                    var surroundj = coord[1];
+
+                    if (revealed[surroundi][surroundj] == 0) {
+                        var cell = findCell(surroundi, surroundj);
+
+                        var highlightColour = "#70a4ff"
+
+                        cell.style.backgroundColor = highlightColour;
+                        cell.querySelector('.hexTop').style.borderBottomColor = highlightColour;
+                        cell.querySelector('.hexBottom').style.borderTopColor = highlightColour;
+
+                        
+
+                    }
+                });
+
+                highlighted[0] = i;
+                highlighted[1] = j;
+
+            }
+        }
+    }
 }
 
 //fn to reveal remaining unfound mines in random order. Also puts X on wrong flags
@@ -511,6 +644,9 @@ revealMines = () => {
             setTimeout(delayRevealFlags, 150);
 
         }
+
+        if(wonGame){alert("You Won!")}
+
     }
 
     delayRevealMines();
@@ -519,6 +655,9 @@ revealMines = () => {
 
 //fn to get surrounding cells given i j value
 getSurround = (i, j) => {
+
+    i = Number(i);
+    j = Number(j);
 
     var output = [];
 
@@ -599,6 +738,35 @@ startGame = () => {
 
     //After things are generated start accepting answers
     acceptAnswer = true;
+
+    //attach keydown listner to page
+    document.addEventListener("keydown", e => {
+
+        if (e.key == "Control") {
+            //change tracker to true on keydown
+            ctrDown = true;
+            if(lastCtrDown != ctrDown){
+                highlightRevealSurround();
+            }
+            lastCtrDown = true;
+        }
+
+        
+    })
+
+    //attach keyup listner to page
+    document.addEventListener("keyup", e => {
+
+        if (e.key == "Control") {
+            //change tracker to false on keyup
+            ctrDown = false;
+            lastCtrDown = false;
+            highlightRevealSurround();
+        }
+    })
+
+
+
 }
 
 //Endgame events
