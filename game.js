@@ -5,7 +5,7 @@ var gameBoard = [];
 var revealed = [];
 
 //size of board in concentric hexs
-var size = 8;
+var size = 9;
 
 //Hexagon cell sizes
 var hexW = 25;
@@ -47,6 +47,7 @@ var firstCell = true;
 //Variable to track if game is in progress or not
 var acceptAnswer = false;
 
+//variable to track if player won game at game end event
 var wonGame = false;
 
 //track if CTRL key is down
@@ -249,6 +250,9 @@ createCellHex = (x, y, indexi, indexj) => {
     //initialise div
     var newHex = document.createElement('div');
 
+    //Assign class name
+    newHex.classList.add("hexagon");
+    
     //init top and bottom triangles
     var hexTop = document.createElement('div');
     var hexBottom = document.createElement('div');
@@ -256,9 +260,6 @@ createCellHex = (x, y, indexi, indexj) => {
     //classes to make divs look like triangles
     hexTop.classList.add("hexTop");
     hexBottom.classList.add("hexBottom");
-
-    //Assign class name
-    newHex.classList.add("hexagon");
 
     //Set position
     newHex.style.cssText = `top:${x}px;left:${y}px`;
@@ -429,6 +430,8 @@ toggleFlag = (i, j) => {
         //if the cell hasn't been revealed and there's no flag present
         if (revealed[i][j] == 0 && revealed[i][j] != 2) {
 
+
+            //Need to update to use find cell fn
             //iterate throguh page elements to find corresponding element
             document.querySelectorAll(".hexagon").forEach(cell => {
 
@@ -474,49 +477,68 @@ toggleFlag = (i, j) => {
 //fn to reveal all surroung
 revealAllSurround = (i, j) => {
 
+    //gets surrounding cell of cell clicked
     var surround = getSurround(i, j);
 
+    //Initialises flag count to 0
     var flagCount = 0
 
+    //For each surrounding cell coord
     surround.forEach(coord => {
+
+        //restructure
         var coodi = coord[0];
         var coodj = coord[1];
 
+        //if there's a flag in a surround cell increase flag count
         if(revealed[coodi][coodj] == 2){flagCount++};
 
     });
 
+    //if all mines are accounted for i.e. flag count = num of surrounging mines
     if(flagCount == gameBoard[i][j]){
+
+        //Reveal each surrounding cell
         surround.forEach(coord => {
             coordi = coord[0];
             coordj = coord[1];
 
+            //calls reveal cell method
             revealCell(coordi, coordj);
         })
     }
 }
 
+//fn to highlight surround cells when ctrl held down
 highlightRevealSurround = () => {
     
+    //if there are already cells highlighted
     if (highlighted.length){
 
-
+        //restructure
         i = highlighted[0];
         j = highlighted[1];
 
+        //Gets surrounding cells to revert back to normal colour
         var surroundRevert = getSurround(i, j);
 
+        //iterate through surround cells
         surroundRevert.forEach(coordRevert => {
 
+            //restructure
             var surroundReverti = coordRevert[0];
             var surroundRevertj = coordRevert[1];
 
+            //if cell isn't revealed, changes colour back to regular blue
             if(revealed[surroundReverti][surroundRevertj] == 0){
 
+                //finds cell in page
                 var revertCell = findCell(surroundReverti, surroundRevertj);
 
+                //colour to change cell to
                 var normalColour = "#0A5CE8"
 
+                //change cell elements to normal colour
                 revertCell.style.backgroundColor = normalColour;
                 revertCell.querySelector('.hexTop').style.borderBottomColor = normalColour;
                 revertCell.querySelector('.hexBottom').style.borderTopColor = normalColour;
@@ -524,36 +546,50 @@ highlightRevealSurround = () => {
 
         });
         
+        //Empties highlighted tracker
         highlighted = [];
 
+    //Else if there are no cells highlighted
     } else {        
         
+        //if ctrl held down, game in progress and there is a cell being hovered over
         if(acceptAnswer && ctrDown && hover.length){
             
+            //restructure hovered cell coords
             var i = hover[0];
             var j = hover[1];
+
+            //if cell is revealed and it's not a number (not an empty cell)
             if(revealed[i][j] == 1 && gameBoard[i][j] > 0) {
                 
+                //gets surrounging cells for cell hovered
                 var surround = getSurround(i, j);
                 
+                //for each surrounging cell
                 surround.forEach(coord => {
+
+                    //restructure to get cell coords
                     var surroundi = coord[0];
                     var surroundj = coord[1];
 
+                    //if the surround cell isn't revealed
                     if (revealed[surroundi][surroundj] == 0) {
+
+                        //find cell in the page
                         var cell = findCell(surroundi, surroundj);
 
+                        //colour to change to highlight colour
                         var highlightColour = "#70a4ff"
 
+                        //highlight cells and elements
                         cell.style.backgroundColor = highlightColour;
                         cell.querySelector('.hexTop').style.borderBottomColor = highlightColour;
                         cell.querySelector('.hexBottom').style.borderTopColor = highlightColour;
 
-                        
-
                     }
                 });
 
+                //Add cell to highlighted tracker var
                 highlighted[0] = i;
                 highlighted[1] = j;
 
@@ -645,10 +681,12 @@ revealMines = () => {
 
         }
 
+        //if you completed the game, alert
         if(wonGame){alert("You Won!")}
 
     }
 
+    //call cascade to reveal mines then reveal flags
     delayRevealMines();
 
 }
@@ -656,6 +694,7 @@ revealMines = () => {
 //fn to get surrounding cells given i j value
 getSurround = (i, j) => {
 
+    //Just to ensure i and j values are numbers
     i = Number(i);
     j = Number(j);
 
@@ -729,6 +768,13 @@ findCell = (i, j) => {
 
 //fns to call on game start
 startGame = () => {
+
+    //calc board w and h
+    var boardWidth = sizeHex * (hexW + hexMargin) - hexMargin;
+    var boardHeight = sizeHex * (hexH * 0.75 + (hexMargin / Math.cos(((2 * Math.PI / 360) * 30))));
+
+    //Set height and width of container to correct values
+    document.querySelector('#gamecontainer').style.cssText = `height: ${boardHeight}px; width: ${boardWidth}px;`
 
     //generates gameboard given size input
     generateGameBoard(sizeHex);

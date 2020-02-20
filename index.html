@@ -1,15 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <link rel="stylesheet" href="style.css">
-    <title>Hexagonal Mine Sweeper</title>
-</head>
-<body>
-    <div id="gamecontainer">
 
-    </div>
-    <script src="game.js"></script>
-</body>
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <link rel="stylesheet" href="style.css">
+        <title>Hexagonal Mine Sweeper</title>
+    </head>
+
+    <body>
+        <header>
+            <h1>Hexagonal Minesweeper by Ben</h1>
+        </header>
+        <main>
+            <div class="controls">
+                <p>Difficulty</p>
+                <p>Amount of mines</p>
+                <p>Flags <span class="flagCount"></span></p>
+                <p>Time <span class="timeCount"></span></p>
+            </div>
+            <div class="container">
+                <div id="gamecontainer"></div>
+            </div>
+            <div class="rules">
+
+            </div>
+        </main>
+        <footer>
+
+        </footer>
+        <script src="game.js"></script>
+    </body>
+
 </html>

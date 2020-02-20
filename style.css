@@ -7,9 +7,31 @@ body {
     background-color: #121212;
 }
 
+main {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 80vw;
+    margin: auto;
+}
+
+.controls {
+    display: flex;
+    background-color: #232323;
+}
+
+.container {
+    padding: 20px;
+    background-color: #232323;
+    min-width: min-content;
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
 #gamecontainer {
     position: relative;
-    margin: 50px;
+;
 }
 
 .hexagon {
@@ -87,4 +109,8 @@ body {
       height: 20px;
       transform: rotate(90deg);
       background-color: red;
+  }
+
+  .controls, .score, header {
+      color: ivory;
   }
